@@ -1,0 +1,100 @@
+@import 'tailwindcss';
+
+/*
+ * PFL design tokens.
+ *
+ * Navy + muted gold on warm off-white: the register South African financial
+ * services audiences read as established rather than fintech-new. No webfonts
+ * — most traffic is mobile on metered data, and a system stack renders
+ * instantly with no layout shift.
+ */
+@theme {
+  --color-ink: #0f2a47;
+  --color-ink-soft: #3c5673;
+  --color-ink-muted: #6b7f96;
+
+  --color-parchment: #faf8f5;
+  --color-parchment-deep: #f1ece4;
+
+  --color-gold: #b8893b;
+  --color-gold-soft: #e7d9bf;
+
+  --color-positive: #2f7d5d;
+  --color-caution: #b8813b;
+  --color-alert: #a8452f;
+
+  --color-line: #e3ded5;
+
+  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial,
+    sans-serif;
+  --font-serif: ui-serif, Georgia, Cambria, 'Times New Roman', serif;
+}
+
+:root {
+  color-scheme: light;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background-color: var(--color-parchment);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  line-height: 1.6;
+  /* Avoids the iOS zoom-on-focus jump when tapping a form field. */
+  font-size: 16px;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-serif);
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+/* Visible focus for keyboard users — required for accessibility sign-off. */
+:focus-visible {
+  outline: 3px solid var(--color-gold);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/*
+ * Print rules. "Download PDF" on the report page calls window.print(), so the
+ * printed sheet is the deliverable — it has to stand on its own.
+ */
+@media print {
+  @page {
+    margin: 16mm;
+  }
+
+  body {
+    background: #fff;
+    font-size: 11pt;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .print-block {
+    break-inside: avoid;
+  }
+
+  a[href^='http']::after {
+    content: ' (' attr(href) ')';
+    font-size: 9pt;
+    color: #555;
+  }
+}
