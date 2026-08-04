@@ -37,6 +37,8 @@ describe('event weights', () => {
 
   it('recognises known event types and rejects unknown ones', () => {
     expect(isEventType('quiz_completed')).toBe(true);
+    expect(isEventType('quiz_question_answered')).toBe(true);
+    expect(isEventType('share_clicked')).toBe(true);
     expect(isEventType('definitely_not_an_event')).toBe(false);
   });
 });
@@ -56,7 +58,9 @@ describe('scoreEvents', () => {
   });
 
   it('ignores event types with no weight', () => {
-    expect(scoreEvents(events('page_view', 'quiz_started'))).toBe(0);
+    expect(
+      scoreEvents(events('page_view', 'quiz_started', 'quiz_question_answered', 'share_clicked')),
+    ).toBe(0);
   });
 });
 

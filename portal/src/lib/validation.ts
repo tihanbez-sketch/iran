@@ -18,10 +18,41 @@ const answerShape = Object.fromEntries(
 
 export const quizAnswersSchema = z.object(answerShape).strict();
 
+/**
+ * First-touch channel record from the browser (src/lib/attribution.ts).
+ * Unknown keys are stripped rather than rejected, so an older or newer stored
+ * record never blocks a submission.
+ */
+const attributionValue = z.string().trim().min(1).max(150);
+export const attributionSchema = z.object({
+  source: attributionValue.optional(),
+  medium: attributionValue.optional(),
+  campaign: attributionValue.optional(),
+  content: attributionValue.optional(),
+  term: attributionValue.optional(),
+  ref: attributionValue.optional(),
+  referrer: attributionValue.optional(),
+  landing: z.string().trim().min(1).max(300).optional(),
+  firstSeenAt: z.string().trim().min(1).max(40).optional(),
+});
+
+/** Drops undefined values so the object is clean for jsonb storage. */
+export function compactAttribution(
+  attribution: z.infer<typeof attributionSchema> | undefined,
+): Record<string, string> {
+  if (!attribution) return {};
+  return Object.fromEntries(
+    Object.entries(attribution).filter((entry): entry is [string, string] =>
+      typeof entry[1] === 'string',
+    ),
+  );
+}
+
 export const quizSubmissionSchema = z.object({
   answers: quizAnswersSchema,
   /** Anonymous browser-side id, lets us stitch pre-capture events to a lead. */
   sessionId: z.string().min(8).max(64),
+  attribution: attributionSchema.optional(),
 });
 
 /**
@@ -53,6 +84,7 @@ export const leadCaptureSchema = z.object({
   /** Separate, genuinely optional marketing consent. */
   consentMarketing: z.boolean().optional().default(false),
   source: z.string().max(80).optional().default('retirement_health_score'),
+  attribution: attributionSchema.optional(),
 });
 
 export const eventSchema = z.object({

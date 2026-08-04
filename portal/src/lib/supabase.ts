@@ -47,6 +47,8 @@ export interface LeadRecord {
   consent_privacy_at: string;
   consent_marketing: boolean;
   tags: string[];
+  /** First-touch channel record; {} when the visitor arrived with none. */
+  attribution: Record<string, string>;
 }
 
 /**

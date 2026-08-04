@@ -6,7 +6,8 @@ import { useEffect, useState } from 'react';
 import { BreakdownBars, ScoreGauge } from '@/components/ScoreGauge';
 import { labelFor, QUIZ_QUESTIONS, type QuestionId } from '@/lib/quiz-questions';
 import type { ScoreBand } from '@/lib/scoring';
-import { readLeadId, readQuizResult, type StoredQuizResult } from '@/lib/session';
+import { readLeadId, readQuizResult, track, type StoredQuizResult } from '@/lib/session';
+import { buildShareUrl, shareMessage, whatsappShareLink } from '@/lib/share';
 
 /**
  * Questions worth raising with an advisor.
@@ -214,6 +215,93 @@ export function ReportView() {
           </p>
         </footer>
       </article>
+
+      <SharePanel />
     </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+
+/**
+ * The referral loop. Shares the QUIZ link with utm tags — never this
+ * person's answers or score — so referred visitors attribute correctly.
+ */
+function SharePanel() {
+  const [copied, setCopied] = useState(false);
+  // Native share availability is checked in an effect so server and first
+  // client render agree (navigator does not exist on the server).
+  const [canNativeShare, setCanNativeShare] = useState(false);
+
+  useEffect(() => {
+    setCanNativeShare(typeof navigator !== 'undefined' && typeof navigator.share === 'function');
+  }, []);
+
+  function origin(): string {
+    return window.location.origin;
+  }
+
+  function handleWhatsApp() {
+    track('share_clicked', { channel: 'whatsapp' }, readLeadId() ?? undefined);
+    window.open(whatsappShareLink(origin()), '_blank', 'noopener');
+  }
+
+  async function handleNativeShare() {
+    track('share_clicked', { channel: 'native' }, readLeadId() ?? undefined);
+    try {
+      await navigator.share({
+        title: 'Retirement Health Score',
+        text: shareMessage(buildShareUrl(origin(), 'native')),
+      });
+    } catch {
+      // AbortError when the person closes the share sheet — not an error.
+    }
+  }
+
+  async function handleCopy() {
+    track('share_clicked', { channel: 'copy' }, readLeadId() ?? undefined);
+    const url = buildShareUrl(origin(), 'copy');
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2500);
+    } catch {
+      // Clipboard unavailable (e.g. plain http) — show the link instead.
+      window.prompt('Copy this link', url);
+    }
+  }
+
+  return (
+    <section className="no-print mt-6 rounded-2xl border border-line bg-white p-6 sm:p-8">
+      <h2 className="text-lg font-semibold text-ink">Know someone who should check their number?</h2>
+      <p className="mt-2 text-sm text-ink-soft">
+        Send them the quiz. This shares the link only — never your answers or your score.
+      </p>
+      <div className="mt-5 flex flex-col gap-2.5 sm:flex-row">
+        <button
+          type="button"
+          onClick={handleWhatsApp}
+          className="rounded-xl bg-ink px-5 py-3 text-sm font-medium text-parchment transition-opacity hover:opacity-90"
+        >
+          Share on WhatsApp
+        </button>
+        {canNativeShare && (
+          <button
+            type="button"
+            onClick={handleNativeShare}
+            className="rounded-xl border border-ink px-5 py-3 text-sm font-medium text-ink transition-colors hover:bg-parchment-deep"
+          >
+            Share…
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={handleCopy}
+          className="rounded-xl border border-line px-5 py-3 text-sm font-medium text-ink transition-colors hover:border-ink"
+        >
+          {copied ? 'Link copied ✓' : 'Copy the link'}
+        </button>
+      </div>
+    </section>
   );
 }

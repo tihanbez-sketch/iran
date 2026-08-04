@@ -34,9 +34,11 @@ error on lead capture rather than dropping the lead silently.
 
 ### Database
 
-Run both migrations in `supabase/migrations/` in order, via `supabase db push` or the
+Run the migrations in `supabase/migrations/` in order, via `supabase db push` or the
 Supabase SQL editor. `0002_rls.sql` is not optional — it is what keeps lead data
-unreadable from a browser.
+unreadable from a browser. `0003_attribution_and_funnel.sql` adds channel attribution
+and the quiz drop-off view; lead capture writes to `leads.attribution`, so it must be
+applied before going live.
 
 ---
 
@@ -90,6 +92,35 @@ Points are written to `events.points` at insert time from that single source of 
 the `lead_scores` view is a plain `SUM` and retuning weights later cannot silently rewrite
 historical scores. The client sends an event *type*, never a score — a lead's score cannot
 be inflated from the browser.
+
+---
+
+## Attribution, sharing and the funnel
+
+Getting people to the quiz is a channel question, and the code now answers "which
+channel worked":
+
+- **First-touch attribution** (`src/lib/attribution.ts`). `utm_*` parameters and a short
+  `?ref=` code (for posters/QR) are captured on arrival and stored in the browser. The
+  record rides along with quiz completion and lead capture into `leads.attribution` and
+  event metadata, so channel → lead volume *and* channel → score quality are both
+  queryable. First touch wins; an organic first visit is upgraded by a later campaign
+  visit. `lead_scores` exposes a `channel` column for the advisor worklist.
+- **Share loop** (`src/lib/share.ts` + the panel on `/report`). WhatsApp, native share
+  and copy-link, all pointing at the **quiz** (never the sharer's report) with
+  `utm_source=whatsapp|share&utm_medium=referral`, so referred leads attribute. The
+  prefilled message is asserted by the test suite to pass the same FAIS screening as
+  generated output. Each share fires a `share_clicked` event.
+- **Share preview card** (`src/app/opengraph-image.png`, 1200×630). Forwarded links
+  render as a proper card on WhatsApp and Facebook instead of bare text. Regenerate by
+  editing the design and re-screenshotting at 1200×630. Set `NEXT_PUBLIC_SITE_URL` in
+  production — WhatsApp requires the absolute og:image URL it feeds.
+- **Drop-off funnel**. Every answered question fires `quiz_question_answered`
+  (0 points), and the `quiz_funnel` view turns those into per-question reach: a big
+  drop between adjacent steps points at the question to fix.
+
+Suggested link conventions: staffroom/QR placements use `?ref=<placement>`, paid and
+social use standard `utm_source`/`utm_medium`/`utm_campaign`.
 
 ---
 
@@ -189,6 +220,8 @@ portal/
    block at the bottom of `0002_rls.sql`).
 5. **Add rate limiting** on `/api/leads` and `/api/quiz`. There is none yet; each quiz
    submission costs a Claude call.
+6. **Set `NEXT_PUBLIC_SITE_URL`** to the production domain — share previews on WhatsApp
+   and Facebook need the absolute og:image URL it produces.
 
 ### Known tuning note
 

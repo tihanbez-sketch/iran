@@ -1,11 +1,15 @@
 import type { Metadata, Viewport } from 'next';
 import Link from 'next/link';
 
+import { AttributionCapture } from '@/components/AttributionCapture';
 import { DISCLAIMER } from '@/lib/compliance';
 
 import './globals.css';
 
 export const metadata: Metadata = {
+  // Absolute URLs for og:image — WhatsApp and Facebook require them, so
+  // NEXT_PUBLIC_SITE_URL must be set in production.
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
   title: {
     default: 'PFL Financial Advisors — Retirement Health Score',
     template: '%s | PFL Financial Advisors',
@@ -18,6 +22,7 @@ export const metadata: Metadata = {
       'Eight questions, two minutes, an instant score out of 100 with a personalised breakdown.',
     type: 'website',
   },
+  twitter: { card: 'summary_large_image' },
   robots: { index: true, follow: true },
 };
 
@@ -31,6 +36,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en-ZA">
       <body className="min-h-screen antialiased">
+        <AttributionCapture />
         <a
           href="#main"
           className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:bg-ink focus:px-4 focus:py-2 focus:text-parchment"

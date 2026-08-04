@@ -18,7 +18,7 @@ import {
   recordEvent,
   upsertLead,
 } from '@/lib/supabase';
-import { fieldErrors, leadCaptureSchema } from '@/lib/validation';
+import { compactAttribution, fieldErrors, leadCaptureSchema } from '@/lib/validation';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -40,6 +40,7 @@ export async function POST(request: Request) {
   }
 
   const { fullName, email, phone, sessionId, answers, consentMarketing, source } = parsed.data;
+  const attribution = compactAttribution(parsed.data.attribution);
 
   if (!isSupabaseConfigured()) {
     // Explicit rather than a silent success — a lost lead is worse than a
@@ -62,6 +63,7 @@ export async function POST(request: Request) {
     consent_privacy_at: new Date().toISOString(),
     consent_marketing: consentMarketing,
     tags: result.tags,
+    attribution,
   });
 
   if ('error' in lead) {
@@ -79,7 +81,7 @@ export async function POST(request: Request) {
       leadId: lead.id,
       sessionId,
       eventType: 'lead_captured',
-      metadata: { source, score: result.score, band: result.band, consentMarketing },
+      metadata: { source, score: result.score, band: result.band, consentMarketing, attribution },
     });
   } catch (error) {
     console.error('[leads] post-capture bookkeeping failed', error);

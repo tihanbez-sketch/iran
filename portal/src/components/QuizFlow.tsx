@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { BreakdownBars, ScoreGauge } from '@/components/ScoreGauge';
+import { readAttribution } from '@/lib/attribution';
 import { QUIZ_QUESTIONS } from '@/lib/quiz-questions';
 import type { ScoreBand } from '@/lib/scoring';
 import {
@@ -79,7 +80,11 @@ export function QuizFlow() {
         const response = await fetch('/api/quiz', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ answers: finalAnswers, sessionId: getSessionId() }),
+          body: JSON.stringify({
+            answers: finalAnswers,
+            sessionId: getSessionId(),
+            attribution: readAttribution() ?? undefined,
+          }),
         });
 
         if (!response.ok) {
@@ -107,6 +112,10 @@ export function QuizFlow() {
     (value: string) => {
       const next = { ...answers, [question.id]: value };
       setAnswers(next);
+
+      // Funnel event: which question did sessions get to? A drop between
+      // adjacent steps in the quiz_funnel view points at the question to fix.
+      track('quiz_question_answered', { step: step + 1, questionId: question.id });
 
       if (step + 1 < total) {
         setStep(step + 1);
@@ -349,6 +358,7 @@ function LeadCaptureForm({ result, answers, onNavigate }: LeadCaptureFormProps) 
           consentPrivacy,
           consentMarketing,
           source: 'retirement_health_score',
+          attribution: readAttribution() ?? undefined,
         }),
       });
 

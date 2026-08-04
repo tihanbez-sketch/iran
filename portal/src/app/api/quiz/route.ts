@@ -15,7 +15,7 @@ import { generateInsights } from '@/lib/insights';
 import { qualifiesAsReturnVisit } from '@/lib/lead-scoring';
 import { scoreQuiz, type QuizAnswers } from '@/lib/scoring';
 import { isSupabaseConfigured, lastEventAtForSession, recordEvent } from '@/lib/supabase';
-import { fieldErrors, quizSubmissionSchema } from '@/lib/validation';
+import { compactAttribution, fieldErrors, quizSubmissionSchema } from '@/lib/validation';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -37,6 +37,7 @@ export async function POST(request: Request) {
   }
 
   const { answers, sessionId } = parsed.data;
+  const attribution = compactAttribution(parsed.data.attribution);
   const result = scoreQuiz(answers as QuizAnswers);
   const insights = await generateInsights(answers as QuizAnswers, result);
 
@@ -71,6 +72,9 @@ export async function POST(request: Request) {
           breakdown: result.breakdown,
           tags: result.tags,
           insightSource: insights.source,
+          // Channel → score-quality analysis: do Facebook leads score lower
+          // than staffroom leads? This is where that answer comes from.
+          attribution,
         },
       });
     } catch (error) {

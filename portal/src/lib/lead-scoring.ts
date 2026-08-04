@@ -21,8 +21,12 @@ export const EVENT_POINTS = {
   /** Tracked for context, deliberately worth nothing on its own. */
   page_view: 0,
   quiz_started: 0,
+  /** Funnel event, one per question answered — powers the quiz_funnel view. */
+  quiz_question_answered: 0,
   lead_captured: 0,
   report_downloaded: 0,
+  /** Strong engagement signal; left at 0 until the weights are retuned. */
+  share_clicked: 0,
 } as const;
 
 export type EventType = keyof typeof EVENT_POINTS;
