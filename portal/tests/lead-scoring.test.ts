@@ -21,10 +21,13 @@ describe('event weights', () => {
     ['calculator_used', 10],
     ['policy_uploaded', 40],
     ['chatbot_qualified', 15],
-    ['call_booked', 50],
+    ['call_booked', 60],
     ['email_opened', 2],
     ['email_clicked', 5],
     ['returned_within_7_days', 10],
+    ['call_connected', 5],
+    ['callback_scheduled', 15],
+    ['quiz_assisted', 20],
   ] as const)('scores %s at %i points', (eventType, expected) => {
     expect(pointsFor(eventType)).toBe(expected);
   });
@@ -106,21 +109,29 @@ describe('summariseLead — worked scenarios', () => {
     expect(summary.band).toBe('hot');
   });
 
-  it('rates a booked call plus the quiz as hot — the real funnel path', () => {
-    // 20 + 50 = 70. Nobody reaches the booking step without completing the
-    // quiz first, so this is the path a real booked lead takes.
+  it('rates a booked call plus the quiz as hot — the web funnel path', () => {
+    // 20 + 60 = 80.
     const summary = summariseLead(events('quiz_completed', 'call_booked'));
-    expect(summary.score).toBe(70);
+    expect(summary.score).toBe(80);
     expect(summary.band).toBe('hot');
   });
 
-  it('leaves a bare booked call one point band short of hot', () => {
-    // Documents a known edge of the starter weights: call_booked is 50 and the
-    // hot threshold is 60, so a booking with no other recorded activity reads
-    // as warm. Unreachable through the current funnel, but if a booking ever
-    // arrives from an external channel, raise call_booked to 60.
-    expect(summariseLead(events('call_booked')).score).toBe(50);
-    expect(summariseLead(events('call_booked')).band).toBe('warm');
+  it('rates a bare booked call as hot — the call-centre path', () => {
+    // The call centre books discovery calls without a preceding quiz, so a
+    // booking must clear the hot threshold on its own. This is why
+    // call_booked is 60, not the original 50.
+    expect(summariseLead(events('call_booked')).score).toBe(60);
+    expect(summariseLead(events('call_booked')).band).toBe('hot');
+  });
+
+  it('scores a realistic call-centre journey', () => {
+    // connected (5) + callback (15) + connected (5) + booked (60) = 85
+    const summary = summariseLead(
+      events('call_attempted', 'call_connected', 'callback_scheduled',
+             'call_attempted', 'call_connected', 'call_booked'),
+    );
+    expect(summary.score).toBe(85);
+    expect(summary.band).toBe('hot');
   });
 
   it('reports the event count', () => {

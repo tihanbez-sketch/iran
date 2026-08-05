@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { BreakdownBars, ScoreGauge } from '@/components/ScoreGauge';
 import { readAttribution } from '@/lib/attribution';
-import { QUIZ_QUESTIONS } from '@/lib/quiz-questions';
+import { QUIZ_QUESTIONS, QUIZ_SLUG } from '@/lib/quiz-questions';
 import type { ScoreBand } from '@/lib/scoring';
 import {
   clearQuizResult,
@@ -63,7 +63,7 @@ export function QuizFlow() {
       setStage('result');
       return;
     }
-    track('quiz_started');
+    track('quiz_started', { quiz: QUIZ_SLUG });
   }, []);
 
   // Move focus to the new question so screen-reader and keyboard users are not
@@ -115,7 +115,7 @@ export function QuizFlow() {
 
       // Funnel event: which question did sessions get to? A drop between
       // adjacent steps in the quiz_funnel view points at the question to fix.
-      track('quiz_question_answered', { step: step + 1, questionId: question.id });
+      track('quiz_question_answered', { quiz: QUIZ_SLUG, step: step + 1, questionId: question.id });
 
       if (step + 1 < total) {
         setStep(step + 1);

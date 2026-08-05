@@ -29,7 +29,7 @@ error on lead capture rather than dropping the lead silently.
 | ------------------ | --------------------------------------------- |
 | `npm run dev`      | Dev server                                    |
 | `npm run build`    | Production build                              |
-| `npm test`         | Vitest suite (119 tests)                      |
+| `npm test`         | Vitest suite (251 tests)                      |
 | `npm run typecheck`| `tsc --noEmit`                                |
 
 ### Database
@@ -85,8 +85,10 @@ in 0–100 and always equals the sum of its parts.
 ### Lead scoring
 
 Weights are exactly as specified (`src/lib/lead-scoring.ts`): quiz +20, calculator +10,
-policy upload +40, chatbot qualified +15, call booked +50, email open +2, click +5,
-7-day return +10. **≥60 hot · 30–59 warm · <30 nurture.**
+policy upload +40, chatbot qualified +15, call booked +60, email open +2, click +5,
+7-day return +10. **≥60 hot · 30–59 warm · <30 nurture.** The call-centre engine adds
+its own zero-or-low-point dispositions (`call_connected` +5, `callback_scheduled` +15,
+`quiz_assisted` +20, the rest 0) — suppression is queue exclusion, never score arithmetic.
 
 Points are written to `events.points` at insert time from that single source of truth, so
 the `lead_scores` view is a plain `SUM` and retuning weights later cannot silently rewrite
@@ -202,7 +204,7 @@ portal/
 │       ├── supabase.ts              server-side data access
 │       └── session.ts               anonymous session id
 ├── supabase/migrations/             schema + RLS
-└── tests/                           119 tests
+└── tests/                           251 tests
 ```
 
 ---
@@ -216,19 +218,31 @@ portal/
    officer, privacy contact address, retention period.
 3. **Extend the product blocklist** in `src/lib/compliance.ts` with any provider names the
    compliance officer wants added.
-4. **Set `SUPABASE_SERVICE_ROLE_KEY`** and drop the anon write policies (the commented
-   block at the bottom of `0002_rls.sql`).
+4. **Set `SUPABASE_SERVICE_ROLE_KEY`**, then apply `0005_agent_auth_rls.sql` — it
+   executes the anon-policy teardown that `0002_rls.sql` documented as "Deployment A".
+   Ordering matters; see `CALLCENTRE.md`.
 5. **Add rate limiting** on `/api/leads` and `/api/quiz`. There is none yet; each quiz
    submission costs a Claude call.
 6. **Set `NEXT_PUBLIC_SITE_URL`** to the production domain — share previews on WhatsApp
    and Facebook need the absolute og:image URL it produces.
 
-### Known tuning note
+### Tuning note, resolved
 
-`call_booked` is worth 50 and the hot threshold is 60, so a booking with no other recorded
-activity scores as *warm*. Unreachable through the current funnel — anyone booking has
-completed the quiz (+20 = 70, hot) — but if bookings ever arrive from an external channel,
-raise `call_booked` to 60. Covered by an explicit test.
+`call_booked` was 50 against a hot threshold of 60 — harmless while every booking came
+through the quiz funnel, wrong once the call centre started creating bookings outside it.
+It is now **60**: a bare booking is a hot lead. Historical events keep the points stamped
+when they occurred (that is the stamping design working as intended). Covered by an
+explicit test.
+
+---
+
+## The call-centre engine
+
+The outbound counterpart to everything above: PFL's ~3,500 funeral policyholders imported
+into the same `leads` spine, prioritised, and worked from the authenticated agent
+workspace at `/agents` — next-call card, disposition buttons, POPIA-gated link sends, and
+an admin book import. **See `CALLCENTRE.md`** for the deployment order (it changes the
+RLS posture), the compliance model and the pilot runbook.
 
 ---
 

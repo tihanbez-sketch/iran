@@ -13,6 +13,7 @@ import { NextResponse } from 'next/server';
 
 import { generateInsights } from '@/lib/insights';
 import { qualifiesAsReturnVisit } from '@/lib/lead-scoring';
+import { QUIZ_SLUG } from '@/lib/quiz-questions';
 import { scoreQuiz, type QuizAnswers } from '@/lib/scoring';
 import { isSupabaseConfigured, lastEventAtForSession, recordEvent } from '@/lib/supabase';
 import { compactAttribution, fieldErrors, quizSubmissionSchema } from '@/lib/validation';
@@ -66,6 +67,7 @@ export async function POST(request: Request) {
         sessionId,
         eventType: 'quiz_completed',
         metadata: {
+          quiz: QUIZ_SLUG,
           answers,
           score: result.score,
           band: result.band,

@@ -6,6 +6,14 @@
  * segmentation tags. The other five are scored. See ./scoring.ts.
  */
 
+/**
+ * Stamped into metadata.quiz on every quiz funnel event so a future second
+ * quiz (e.g. Family Protection Score) cannot contaminate the retirement
+ * funnel — quiz_funnel filters on it (0004), with legacy events defaulting
+ * to this slug via coalesce.
+ */
+export const QUIZ_SLUG = 'retirement_health_score';
+
 export const QUESTION_IDS = [
   'ageBand',
   'employmentType',

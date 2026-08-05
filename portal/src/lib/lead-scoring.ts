@@ -14,10 +14,27 @@ export const EVENT_POINTS = {
   calculator_used: 10,
   policy_uploaded: 40,
   chatbot_qualified: 15,
-  call_booked: 50,
+  // 60, not 50: bookings now arrive from the call centre without a preceding
+  // quiz, and a booked call must clear the hot threshold on its own.
+  call_booked: 60,
   email_opened: 2,
   email_clicked: 5,
   returned_within_7_days: 10,
+  /** Call-centre dispositions. Attempts are our actions and score nothing;
+   *  engagement (answered, agreed to a callback) scores. */
+  call_attempted: 0,
+  call_connected: 5,
+  call_no_answer: 0,
+  callback_scheduled: 15,
+  /** Quiz completed with an agent assisting on a call; same information value
+   *  as quiz_completed. metadata.assisted distinguishes the channel. */
+  quiz_assisted: 20,
+  /** Link sends are our actions, not engagement. */
+  sms_link_sent: 0,
+  whatsapp_link_sent: 0,
+  /** Suppression is not score arithmetic (points cannot be negative) — an
+   *  opted-out lead is excluded from the queue by leads.do_not_contact. */
+  opted_out: 0,
   /** Tracked for context, deliberately worth nothing on its own. */
   page_view: 0,
   quiz_started: 0,
