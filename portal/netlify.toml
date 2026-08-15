@@ -1,0 +1,16 @@
+# Netlify build config for the portal.
+#
+# The Netlify site must set its BASE DIRECTORY to `portal` — this file then
+# takes precedence over the unrelated netlify.toml at the repository root
+# (which publishes the legacy bundle, not this app).
+#
+# Required environment variables (Site settings -> Environment):
+#   SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY (secret),
+#   ANTHROPIC_API_KEY (secret), NEXT_PUBLIC_SITE_URL
+
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
