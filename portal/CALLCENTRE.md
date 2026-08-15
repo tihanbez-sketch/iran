@@ -1,5 +1,14 @@
 # Call-centre cross-sell engine — pilot runbook
 
+> **Production state (2026-08-15):** Supabase project `pfl-lead-portal`
+> (`wuwyfxjwjesurhxbcxca`, eu-west-2) is live with migrations 0001–0006 applied and
+> verified: anon fully revoked, RLS forced on all six tables, `life_cover_gap`
+> campaign seeded and active. Netlify site `pfl-lead-portal`
+> (https://pfl-lead-portal.netlify.app) is created. Remaining hand-steps are in
+> the deployment order below — most importantly the service-role key (dashboard →
+> Project Settings → API keys) into Netlify env, linking the repo to the site,
+> and the Supabase Auth URL + email-template configuration.
+
 The outbound counterpart to the inbound quiz funnel: PFL's ~3,500 funeral policyholders,
 imported into the portal, prioritised, and worked by call-centre agents from an
 authenticated queue at **`/agents`**. Pilot campaign: **life cover gap**.
